@@ -1,0 +1,89 @@
+import { useState } from 'react';
+import Header from './components/Header';
+import AddressInput from './components/AddressInput';
+import ScoreCard from './components/ScoreCard';
+import ValuationPanel from './components/ValuationPanel';
+import RiskPanel from './components/RiskPanel';
+import ZoningPanel from './components/ZoningPanel';
+import LoadingState from './components/LoadingState';
+import { analyzeProperty } from './services/api';
+import { AlertCircle, RotateCcw } from 'lucide-react';
+
+export default function App() {
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+
+  const handleAnalyze = async (address) => {
+    setLoading(true);
+    setError(null);
+    setData(null);
+
+    try {
+      const result = await analyzeProperty(address);
+      setData(result);
+    } catch (err) {
+      console.error('Analysis failed:', err);
+      setError(err.message || 'Failed to analyze property. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = () => {
+    setData(null);
+    setError(null);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <Header />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        <AddressInput onAnalyze={handleAnalyze} loading={loading} />
+
+        {loading && <LoadingState />}
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 animate-fade-in">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-red-800">Analysis Failed</h3>
+                <p className="text-sm text-red-600 mt-1">{error}</p>
+              </div>
+            </div>
+            <button
+              onClick={handleReset}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Try Again
+            </button>
+          </div>
+        )}
+
+        {data && (
+          <div className="space-y-6">
+            <ScoreCard data={data} />
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <ValuationPanel valuation={data.valuation} />
+              <RiskPanel risks={data.risks} />
+            </div>
+
+            <ZoningPanel zoning={data.zoning} />
+
+            <div className="text-center py-4">
+              <p className="text-xs text-slate-400 max-w-2xl mx-auto">
+                Disclaimer: This analysis is AI-generated for informational purposes only and should not be considered as professional investment advice.
+                All valuations, risk assessments, and zoning information are estimates based on publicly available data and AI analysis.
+                Always consult with qualified real estate professionals, attorneys, and local planning departments before making investment decisions.
+              </p>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
