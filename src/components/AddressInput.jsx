@@ -1,5 +1,6 @@
 import { Search, MapPin, Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import { useI18n } from '../i18n/I18nContext';
 
 const EXAMPLE_ADDRESSES = [
   '1600 Pennsylvania Ave NW, Washington, DC 20500',
@@ -10,6 +11,7 @@ const EXAMPLE_ADDRESSES = [
 
 export default function AddressInput({ onAnalyze, loading }) {
   const [address, setAddress] = useState('');
+  const { t } = useI18n();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -27,10 +29,10 @@ export default function AddressInput({ onAnalyze, loading }) {
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 animate-fade-in">
       <div className="text-center mb-6">
         <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
-          Property Investment Analysis
+          {t('input.title')}
         </h2>
         <p className="text-slate-500 text-sm sm:text-base">
-          Enter a US property address to generate AI-powered investment valuation, risk assessment, and zoning analysis
+          {t('input.subtitle')}
         </p>
       </div>
 
@@ -41,7 +43,7 @@ export default function AddressInput({ onAnalyze, loading }) {
             type="text"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            placeholder="Enter property address (e.g. 123 Main St, City, State ZIP)"
+            placeholder={t('input.placeholder')}
             className="w-full pl-12 pr-32 py-4 text-base border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all bg-slate-50 focus:bg-white placeholder:text-slate-400"
             disabled={loading}
           />
@@ -53,12 +55,12 @@ export default function AddressInput({ onAnalyze, loading }) {
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Analyzing...
+                {t('input.analyzing')}
               </>
             ) : (
               <>
                 <Search className="w-4 h-4" />
-                Analyze
+                {t('input.analyze')}
               </>
             )}
           </button>
@@ -66,7 +68,7 @@ export default function AddressInput({ onAnalyze, loading }) {
       </form>
 
       <div className="mt-5 text-center">
-        <p className="text-xs text-slate-400 mb-2">Try an example:</p>
+        <p className="text-xs text-slate-400 mb-2">{t('input.tryExample')}</p>
         <div className="flex flex-wrap justify-center gap-2">
           {EXAMPLE_ADDRESSES.map((addr) => (
             <button

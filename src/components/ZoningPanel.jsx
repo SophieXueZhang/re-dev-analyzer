@@ -1,4 +1,5 @@
 import { Landmark, BookOpen, CheckSquare, XSquare, AlertCircle, Ruler, FileText } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext';
 
 function Tag({ children, color }) {
   const colors = {
@@ -16,13 +17,15 @@ function Tag({ children, color }) {
 }
 
 export default function ZoningPanel({ zoning }) {
+  const { t } = useI18n();
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 animate-slide-up stagger-4">
       <div className="flex items-center gap-2 mb-5">
         <div className="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center">
           <Landmark className="w-5 h-5 text-violet-600" />
         </div>
-        <h3 className="text-lg font-bold text-slate-900">Zoning & Local Code</h3>
+        <h3 className="text-lg font-bold text-slate-900">{t('zoning.title')}</h3>
       </div>
 
       {/* Zoning classification header */}
@@ -33,7 +36,7 @@ export default function ZoningPanel({ zoning }) {
         </div>
         {zoning.overlayDistricts && zoning.overlayDistricts.length > 0 && zoning.overlayDistricts[0] && (
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-xs text-slate-400">Overlay Districts:</span>
+            <span className="text-xs text-slate-400">{t('zoning.overlayDistricts')}</span>
             {zoning.overlayDistricts.map((d, i) => (
               <Tag key={i} color="blue">{d}</Tag>
             ))}
@@ -48,7 +51,7 @@ export default function ZoningPanel({ zoning }) {
           <div>
             <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
               <CheckSquare className="w-4 h-4 text-emerald-500" />
-              Permitted Uses
+              {t('zoning.permittedUses')}
             </h4>
             <div className="flex flex-wrap gap-1.5">
               {zoning.permittedUses.map((u, i) => (
@@ -61,7 +64,7 @@ export default function ZoningPanel({ zoning }) {
           <div>
             <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
               <AlertCircle className="w-4 h-4 text-amber-500" />
-              Conditional Uses
+              {t('zoning.conditionalUses')}
             </h4>
             <div className="flex flex-wrap gap-1.5">
               {zoning.conditionalUses.map((u, i) => (
@@ -74,7 +77,7 @@ export default function ZoningPanel({ zoning }) {
           <div>
             <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
               <XSquare className="w-4 h-4 text-red-500" />
-              Prohibited Uses
+              {t('zoning.prohibitedUses')}
             </h4>
             <div className="flex flex-wrap gap-1.5">
               {zoning.prohibitedUses.map((u, i) => (
@@ -90,7 +93,7 @@ export default function ZoningPanel({ zoning }) {
           <div>
             <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
               <Ruler className="w-4 h-4 text-slate-400" />
-              Building Restrictions
+              {t('zoning.buildingRestrictions')}
             </h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
               {Object.entries(zoning.buildingRestrictions).map(([key, value]) => (
@@ -110,7 +113,7 @@ export default function ZoningPanel({ zoning }) {
       <div className="mt-5">
         <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
           <FileText className="w-4 h-4 text-slate-400" />
-          Relevant Local Codes
+          {t('zoning.localCodes')}
         </h4>
         <div className="space-y-2">
           {zoning.localCodes.map((code, i) => (
@@ -132,7 +135,7 @@ export default function ZoningPanel({ zoning }) {
         <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
           <div className="flex items-center gap-2 text-sm">
             <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-            <span className="font-medium text-amber-800">Recent/Upcoming Changes:</span>
+            <span className="font-medium text-amber-800">{t('zoning.recentChanges')}</span>
           </div>
           <p className="text-sm text-amber-700 mt-1 ml-6">{zoning.recentChanges}</p>
         </div>
@@ -142,7 +145,7 @@ export default function ZoningPanel({ zoning }) {
       <div className="mt-4 p-3 bg-brand-50 border border-brand-200 rounded-lg">
         <div className="flex items-center gap-2 mb-1">
           <BookOpen className="w-4 h-4 text-brand-600" />
-          <span className="text-sm font-semibold text-brand-800">Development Potential</span>
+          <span className="text-sm font-semibold text-brand-800">{t('zoning.developmentPotential')}</span>
         </div>
         <p className="text-sm text-brand-700 ml-6">{zoning.developmentPotential}</p>
       </div>

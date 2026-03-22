@@ -1,5 +1,6 @@
 import { ShieldAlert, AlertTriangle, CheckCircle2, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
+import { useI18n } from '../i18n/I18nContext';
 
 function getRiskColor(level) {
   if (level === 'low') return { bg: '#10b981', text: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-700' };
@@ -10,6 +11,7 @@ function getRiskColor(level) {
 function RiskItem({ risk }) {
   const [expanded, setExpanded] = useState(false);
   const color = getRiskColor(risk.level);
+  const { t } = useI18n();
 
   return (
     <div className="border border-slate-200 rounded-xl overflow-hidden">
@@ -32,7 +34,7 @@ function RiskItem({ risk }) {
           <div className="flex items-center gap-2">
             <span className="font-semibold text-slate-800">{risk.category}</span>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${color.badge}`}>
-              {risk.level.toUpperCase()}
+              {t(`risk.${risk.level}`)}
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-0.5 truncate">{risk.description}</p>
@@ -49,7 +51,7 @@ function RiskItem({ risk }) {
         <div className="px-4 pb-4 border-t border-slate-100">
           <p className="text-sm text-slate-600 mt-3 mb-3">{risk.description}</p>
           <div>
-            <h5 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Mitigation Strategies</h5>
+            <h5 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{t('risk.mitigationStrategies')}</h5>
             <ul className="space-y-1.5">
               {risk.mitigations.map((m, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
@@ -68,6 +70,7 @@ function RiskItem({ risk }) {
 export default function RiskPanel({ risks }) {
   const avgScore = (risks.reduce((sum, r) => sum + r.score, 0) / risks.length).toFixed(1);
   const highRisks = risks.filter(r => r.level === 'high').length;
+  const { t } = useI18n();
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 animate-slide-up stagger-3">
@@ -76,16 +79,16 @@ export default function RiskPanel({ risks }) {
           <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
             <ShieldAlert className="w-5 h-5 text-amber-600" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900">Risk Assessment</h3>
+          <h3 className="text-lg font-bold text-slate-900">{t('risk.title')}</h3>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm text-slate-500">
-            Avg Score: <span className="font-bold text-slate-700">{avgScore}/10</span>
+            {t('risk.avgScore')} <span className="font-bold text-slate-700">{avgScore}/10</span>
           </span>
           {highRisks > 0 && (
             <span className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-red-100 text-red-700 rounded-full font-medium">
               <AlertTriangle className="w-3 h-3" />
-              {highRisks} High Risk
+              {t('risk.highRisk', { count: highRisks })}
             </span>
           )}
         </div>

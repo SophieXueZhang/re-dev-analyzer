@@ -1,4 +1,5 @@
 import { TrendingUp, Award, Database } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext';
 
 function getGradeColor(grade) {
   if (grade.startsWith('A')) return 'text-emerald-600 bg-emerald-50 border-emerald-200';
@@ -19,6 +20,7 @@ export default function ScoreCard({ data }) {
   const scoreColor = getScoreColor(overallScore);
   const circumference = 2 * Math.PI * 54;
   const offset = circumference - (overallScore / 100) * circumference;
+  const { t } = useI18n();
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 animate-slide-up stagger-1">
@@ -41,7 +43,7 @@ export default function ScoreCard({ data }) {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-3xl font-bold" style={{ color: scoreColor }}>{overallScore}</span>
-            <span className="text-xs text-slate-400">/ 100</span>
+            <span className="text-xs text-slate-400">{t('score.outOf')}</span>
           </div>
         </div>
 
@@ -53,10 +55,10 @@ export default function ScoreCard({ data }) {
           <div className="flex items-center justify-center sm:justify-start gap-2 mb-3">
             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-bold border ${getGradeColor(investmentGrade)}`}>
               <Award className="w-4 h-4" />
-              Grade {investmentGrade}
+              {t('score.grade', { grade: investmentGrade })}
             </span>
             <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-sm">
-              {property.county} County
+              {t('score.county', { county: property.county })}
             </span>
             <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-sm">
               <TrendingUp className="w-3 h-3" />
@@ -68,7 +70,7 @@ export default function ScoreCard({ data }) {
             <div className="mt-3 flex items-start gap-2">
               <Database className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-slate-400">
-                Data sources: {data.dataSources.join(' | ')}
+                {t('score.dataSources')} {data.dataSources.join(' | ')}
               </p>
             </div>
           )}

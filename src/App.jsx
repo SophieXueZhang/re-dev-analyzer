@@ -8,11 +8,13 @@ import ZoningPanel from './components/ZoningPanel';
 import LoadingState from './components/LoadingState';
 import { analyzeProperty } from './services/api';
 import { AlertCircle, RotateCcw } from 'lucide-react';
+import { useI18n } from './i18n/I18nContext';
 
 export default function App() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+  const { t } = useI18n();
 
   const handleAnalyze = async (address) => {
     setLoading(true);
@@ -24,7 +26,7 @@ export default function App() {
       setData(result);
     } catch (err) {
       console.error('Analysis failed:', err);
-      setError(err.message || 'Failed to analyze property. Please try again.');
+      setError(err.message || t('errors.defaultMessage'));
     } finally {
       setLoading(false);
     }
@@ -49,7 +51,7 @@ export default function App() {
             <div className="flex items-center gap-3">
               <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0" />
               <div>
-                <h3 className="font-semibold text-red-800">Analysis Failed</h3>
+                <h3 className="font-semibold text-red-800">{t('errors.analysisFailed')}</h3>
                 <p className="text-sm text-red-600 mt-1">{error}</p>
               </div>
             </div>
@@ -58,7 +60,7 @@ export default function App() {
               className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
-              Try Again
+              {t('errors.tryAgain')}
             </button>
           </div>
         )}
@@ -76,9 +78,7 @@ export default function App() {
 
             <div className="text-center py-4">
               <p className="text-xs text-slate-400 max-w-2xl mx-auto">
-                Disclaimer: This analysis is AI-generated for informational purposes only and should not be considered as professional investment advice.
-                All valuations, risk assessments, and zoning information are estimates based on publicly available data and AI analysis.
-                Always consult with qualified real estate professionals, attorneys, and local planning departments before making investment decisions.
+                {t('disclaimer')}
               </p>
             </div>
           </div>
