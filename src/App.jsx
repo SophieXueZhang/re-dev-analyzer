@@ -14,7 +14,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
-  const { t } = useI18n();
+  const { t, language } = useI18n();
 
   const handleAnalyze = async (address) => {
     setLoading(true);
@@ -22,7 +22,7 @@ export default function App() {
     setData(null);
 
     try {
-      const result = await analyzeProperty(address);
+      const result = await analyzeProperty(address, language);
       setData(result);
     } catch (err) {
       console.error('Analysis failed:', err);

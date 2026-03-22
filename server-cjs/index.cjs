@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 3100;
 app.use(express.static(path.join(__dirname, '..', 'dist')));
 
 app.post('/api/analyze', async (req, res) => {
-  const { address } = req.body;
+  const { address, language } = req.body;
   if (!address) return res.status(400).json({ error: 'Address is required' });
 
   console.log(`\n=== Analyzing: ${address} ===`);
@@ -40,7 +40,7 @@ app.post('/api/analyze', async (req, res) => {
     ]);
 
     console.log('[6/6] AI synthesis with real data...');
-    const analysis = await synthesizeAnalysis(address, geo, propertyData, zoningData, riskData, censusData);
+    const analysis = await synthesizeAnalysis(address, geo, propertyData, zoningData, riskData, censusData, language);
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(`=== Done in ${elapsed}s ===\n`);

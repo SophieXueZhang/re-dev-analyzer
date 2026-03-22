@@ -1,10 +1,10 @@
 const BACKEND_URL = '/api/analyze';
 
-export async function analyzeProperty(address) {
+export async function analyzeProperty(address, language = 'en') {
   const response = await fetch(BACKEND_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ address }),
+    body: JSON.stringify({ address, language }),
   });
 
   if (!response.ok) {

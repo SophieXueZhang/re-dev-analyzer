@@ -3,10 +3,14 @@ const AI_URL = process.env.AI_BASE_URL || 'https://ai-gateway.happycapy.ai/api/v
 const AI_KEY = process.env.AI_GATEWAY_API_KEY;
 const AI_MODEL = process.env.AI_MODEL || 'x-ai/grok-3';
 
-async function synthesizeAnalysis(address, geo, propertyData, zoningData, riskData, censusData) {
+async function synthesizeAnalysis(address, geo, propertyData, zoningData, riskData, censusData, language) {
   const context = buildContext(address, geo, propertyData, zoningData, riskData, censusData);
 
-  const systemPrompt = `You are a senior US real estate investment analyst. You will be given REAL RESEARCH DATA collected from government APIs, public records, and web searches about a specific property.
+  const langInstruction = language === 'zh'
+    ? `\n\nLANGUAGE REQUIREMENT: You MUST write ALL text content in Simplified Chinese (中文). This includes: quickTake, summary fields, descriptions, mitigations, developmentPotential, recentChanges, relevance text, and all other human-readable strings. Keep property addresses, zoning codes, data source names, and numeric values in their original English/format. The JSON keys must remain in English.`
+    : '';
+
+  const systemPrompt = `You are a senior US real estate investment analyst. You will be given REAL RESEARCH DATA collected from government APIs, public records, and web searches about a specific property.${langInstruction}
 
 CRITICAL RULES:
 1. Base your analysis ONLY on the real data provided. Do NOT invent numbers.
@@ -15,10 +19,22 @@ CRITICAL RULES:
 4. Use USGS seismic data and elevation for risk assessment - these are REAL measurements.
 5. If data is truly unavailable, provide a realistic estimate marked with [Estimated] and explain your reasoning.
 6. For cap rate, NOI, and cash-on-cash return: calculate from real data when possible (Census median rent, home values).
-7. Cite specific data sources.
-8. NEVER leave a field as "N/A" if you can calculate or reasonably estimate it from the available data.
-9. For zoning: if web search results mention specific codes (e.g. C5-3, R-1, MU-2), use those exact codes.
+7. Cite specific data sources with the source name in parentheses (e.g., "150 ft (per NYC Zoning Resolution)").
+8. NEVER leave a field as "N/A" or "Unknown" or "Unknown [Estimated]". For EVERY field you MUST provide either a real value from the data or a specific number estimate marked [Estimated] with reasoning.
+9. For zoning: use the DETECTED ZONING CODE provided and the PAGE CONTENT sections carefully - they contain the actual zoning parameters.
 10. For comparables: only include real data found in search results. Include address, price, sqft if available.
+
+BUILDING RESTRICTIONS - MANDATORY:
+For buildingRestrictions, you MUST extract specific values from the PAGE CONTENT sections and search results. These pages contain actual zoning code text with real numbers.
+- maxHeight: Look for "maximum height", "height limit", "stories", "feet" in the page content. Provide as "XX feet / X stories (per source)".
+- maxFAR: Look for "floor area ratio", "FAR", "maximum FAR" in page content. Provide as "X.X (per source)".
+- maxLotCoverage: Look for "lot coverage", "building coverage", "impervious". Provide as "XX% (per source)".
+- frontSetback: Look for "front yard", "front setback". Provide as "XX feet (per source)".
+- sideSetback: Look for "side yard", "side setback". Provide as "XX feet (per source)".
+- rearSetback: Look for "rear yard", "rear setback". Provide as "XX feet (per source)".
+- minLotSize: Look for "minimum lot", "lot area", "minimum area". Provide as "X,XXX sq ft (per source)".
+- parkingRequirement: Look for "parking", "off-street parking", "spaces per unit". Provide as descriptive text with source.
+If page content does not contain a value, provide a reasonable estimate based on the zoning code type and city, marked as [Estimated based on {code} typical standards].
 
 Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
 {
@@ -203,7 +219,13 @@ function buildContext(address, geo, prop, zoning, risk, census) {
   }
 
   // --- ZONING ---
-  ctx += `## 7. ZONING CLASSIFICATION (Web Search)\n`;
+  // --- DETECTED ZONING CODE ---
+  if (zoning.zoningCode) {
+    ctx += `## 7. DETECTED ZONING CODE: ${zoning.zoningCode}\n`;
+    ctx += `(This was extracted from search results via AI analysis. Use this code for building restrictions.)\n\n`;
+  }
+
+  ctx += `## 8. ZONING CLASSIFICATION (Web Search)\n`;
   if (zoning.zoning?.summary) ctx += `AI Summary: ${zoning.zoning.summary}\n`;
   if (zoning.zoning?.results?.length) {
     for (const r of zoning.zoning.results) {
@@ -212,7 +234,7 @@ function buildContext(address, geo, prop, zoning, risk, census) {
   }
   ctx += `\n`;
 
-  ctx += `## 8. BUILDING CODE & RESTRICTIONS (Web Search)\n`;
+  ctx += `## 9. BUILDING CODE & RESTRICTIONS - TARGETED SEARCH FOR "${zoning.zoningCode || 'code'}" (Web Search)\n`;
   if (zoning.buildingCode?.summary) ctx += `AI Summary: ${zoning.buildingCode.summary}\n`;
   if (zoning.buildingCode?.results?.length) {
     for (const r of zoning.buildingCode.results) {
@@ -221,7 +243,17 @@ function buildContext(address, geo, prop, zoning, risk, census) {
   }
   ctx += `\n`;
 
-  ctx += `## 9. LOCAL ZONING ORDINANCE (Web Search)\n`;
+  // --- RESTRICTION-SPECIFIC SEARCH ---
+  if (zoning.restrictions?.results?.length) {
+    ctx += `## 9b. SETBACK & LOT COVERAGE SEARCH FOR "${zoning.zoningCode || 'code'}" (Web Search)\n`;
+    if (zoning.restrictions.summary) ctx += `AI Summary: ${zoning.restrictions.summary}\n`;
+    for (const r of zoning.restrictions.results) {
+      ctx += `  - [${r.title}](${r.url}): ${r.description}\n`;
+    }
+    ctx += `\n`;
+  }
+
+  ctx += `## 10. LOCAL ZONING ORDINANCE (Web Search)\n`;
   if (zoning.localZoning?.summary) ctx += `AI Summary: ${zoning.localZoning.summary}\n`;
   if (zoning.localZoning?.results?.length) {
     for (const r of zoning.localZoning.results) {
@@ -230,9 +262,19 @@ function buildContext(address, geo, prop, zoning, risk, census) {
   }
   ctx += `\n`;
 
+  // --- SCRAPED PAGE CONTENT (actual zoning code text) ---
+  if (zoning.pageContents?.length > 0) {
+    ctx += `## 11. ACTUAL PAGE CONTENT FROM ZONING SOURCES (IMPORTANT - contains real building restriction numbers)\n`;
+    ctx += `READ THESE CAREFULLY to extract maxHeight, maxFAR, setbacks, lot coverage, parking:\n\n`;
+    for (const page of zoning.pageContents) {
+      ctx += `### Source: ${page.url}\n`;
+      ctx += `${page.content}\n\n`;
+    }
+  }
+
   // --- PERMITS ---
   if (zoning.permits?.results?.length) {
-    ctx += `## 10. RECENT BUILDING PERMITS & DEVELOPMENT (Web Search)\n`;
+    ctx += `## 12. RECENT BUILDING PERMITS & DEVELOPMENT (Web Search)\n`;
     if (zoning.permits.summary) ctx += `AI Summary: ${zoning.permits.summary}\n`;
     for (const r of zoning.permits.results) {
       ctx += `  - [${r.title}](${r.url}): ${r.description}\n`;
@@ -242,7 +284,7 @@ function buildContext(address, geo, prop, zoning, risk, census) {
 
   // --- RISK: SEISMIC ---
   if (risk.seismic) {
-    ctx += `## 11. SEISMIC DATA (USGS ASCE 7-22 - Real Measurements)\n`;
+    ctx += `## 13. SEISMIC DATA (USGS ASCE 7-22 - Real Measurements)\n`;
     ctx += `- Ss (short-period acceleration): ${risk.seismic.ss}g\n`;
     ctx += `- S1 (1-sec acceleration): ${risk.seismic.s1}g\n`;
     ctx += `- SDS (design short-period): ${risk.seismic.sds}g\n`;
@@ -253,14 +295,14 @@ function buildContext(address, geo, prop, zoning, risk, census) {
 
   // --- RISK: ELEVATION ---
   if (risk.elevation) {
-    ctx += `## 12. ELEVATION DATA (USGS National Map)\n`;
+    ctx += `## 14. ELEVATION DATA (USGS National Map)\n`;
     ctx += `- Ground Elevation: ${risk.elevation.elevationFeet} feet\n`;
     ctx += `  Source: ${risk.elevation.source}\n\n`;
   }
 
   // --- RISK: EARTHQUAKES ---
   if (risk.earthquakes && risk.earthquakes.count > 0) {
-    ctx += `## 13. RECENT EARTHQUAKES WITHIN 100km (USGS)\n`;
+    ctx += `## 15. RECENT EARTHQUAKES WITHIN 100km (USGS)\n`;
     ctx += `- Total M2.5+ in past year: ${risk.earthquakes.count}\n`;
     for (const q of risk.earthquakes.recent.slice(0, 5)) {
       ctx += `  - M${q.magnitude} on ${q.time}: ${q.place} (depth: ${q.depth}km)\n`;
@@ -270,7 +312,7 @@ function buildContext(address, geo, prop, zoning, risk, census) {
 
   // --- SOLAR ---
   if (risk.solar) {
-    ctx += `## 14. SOLAR RESOURCE (NREL)\n`;
+    ctx += `## 16. SOLAR RESOURCE (NREL)\n`;
     if (risk.solar.avgDNI) ctx += `- Avg Direct Normal Irradiance: ${risk.solar.avgDNI} kWh/m2/day\n`;
     if (risk.solar.avgGHI) ctx += `- Avg Global Horizontal: ${risk.solar.avgGHI} kWh/m2/day\n`;
     ctx += `  Source: ${risk.solar.source}\n\n`;
@@ -278,7 +320,7 @@ function buildContext(address, geo, prop, zoning, risk, census) {
 
   // --- WEATHER ---
   if (risk.weather) {
-    ctx += `## 15. WEATHER & ALERTS (NOAA)\n`;
+    ctx += `## 17. WEATHER & ALERTS (NOAA)\n`;
     ctx += `- Grid: ${risk.weather.gridId}\n`;
     ctx += `- Timezone: ${risk.weather.timeZone}\n`;
     if (risk.weather.activeAlerts?.length > 0) {
@@ -294,14 +336,14 @@ function buildContext(address, geo, prop, zoning, risk, census) {
 
   // --- OPPORTUNITY ZONE ---
   if (risk.opportunityZone) {
-    ctx += `## 16. OPPORTUNITY ZONE STATUS\n`;
+    ctx += `## 18. OPPORTUNITY ZONE STATUS\n`;
     ctx += `- Is Qualified Opportunity Zone: ${risk.opportunityZone.isOpportunityZone ? 'YES' : 'NO'}\n`;
     ctx += `- Census Tract: ${risk.opportunityZone.tractGeoid}\n`;
     ctx += `  Source: ${risk.opportunityZone.source}\n\n`;
   }
 
   // --- ENVIRONMENTAL SEARCH ---
-  ctx += `## 17. ENVIRONMENTAL & HAZARD SEARCH (Web Search)\n`;
+  ctx += `## 19. ENVIRONMENTAL & HAZARD SEARCH (Web Search)\n`;
   if (risk.envSearch?.summary) ctx += `AI Summary: ${risk.envSearch.summary}\n`;
   if (risk.envSearch?.results?.length) {
     for (const r of risk.envSearch.results) {
@@ -311,7 +353,7 @@ function buildContext(address, geo, prop, zoning, risk, census) {
   ctx += `\n`;
 
   // --- MARKET SEARCH ---
-  ctx += `## 18. MARKET CONDITIONS (Web Search)\n`;
+  ctx += `## 20. MARKET CONDITIONS (Web Search)\n`;
   if (risk.marketSearch?.summary) ctx += `AI Summary: ${risk.marketSearch.summary}\n`;
   if (risk.marketSearch?.results?.length) {
     for (const r of risk.marketSearch.results) {
