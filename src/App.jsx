@@ -11,6 +11,7 @@ import MarketPulse from './components/MarketPulse';
 import DevProForma from './components/DevProForma';
 import FundAnalysis from './components/FundAnalysis';
 import LandUseAnalysis from './components/LandUseAnalysis';
+import HomeBuyerGuide from './components/HomeBuyerGuide';
 import ZoningPanel from './components/ZoningPanel';
 import LoadingState from './components/LoadingState';
 import { analyzeProperty } from './services/api';
@@ -79,9 +80,11 @@ export default function App() {
             <InvestmentThesis thesis={data.investmentThesis} />
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <HomeBuyerGuide financialModel={data.financialModel} valuation={data.valuation} marketActivity={data.marketActivity} />
               <DealCalculator financialModel={data.financialModel} valuation={data.valuation} marketActivity={data.marketActivity} />
-              <MarketPulse marketActivity={data.marketActivity} valuation={data.valuation} />
             </div>
+
+            <MarketPulse marketActivity={data.marketActivity} valuation={data.valuation} />
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <ValuationPanel valuation={data.valuation} />
