@@ -39,6 +39,10 @@ export default {
     adjustWeights: '调整权重',
     reset: '重置',
     customWeights: '自定义权重',
+    preset_balanced: '均衡',
+    preset_conservative: '保守',
+    preset_aggressive: '激进',
+    trendBonus: '市场趋势',
   },
   valuation: {
     title: '投资估值',

@@ -39,6 +39,10 @@ export default {
     adjustWeights: 'Adjust Weights',
     reset: 'Reset',
     customWeights: 'Custom Weights',
+    preset_balanced: 'Balanced',
+    preset_conservative: 'Conservative',
+    preset_aggressive: 'Aggressive',
+    trendBonus: 'Market Trend',
   },
   valuation: {
     title: 'Investment Valuation',

@@ -37,7 +37,7 @@ function calculateOverallScore(risks) {
     const riskScore = riskMap[category];
     if (typeof riskScore !== 'number' || riskScore < 1 || riskScore > 10) continue;
 
-    const componentScore = ((10 - riskScore) / 9) * 100;
+    const componentScore = Math.pow((10 - riskScore) / 9, 1.2) * 100;
     const weighted = componentScore * weight;
 
     breakdown.push({
