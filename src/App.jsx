@@ -8,6 +8,7 @@ import ValuationPanel from './components/ValuationPanel';
 import NeighborhoodProfile from './components/NeighborhoodProfile';
 import RiskPanel from './components/RiskPanel';
 import MarketPulse from './components/MarketPulse';
+import DevProForma from './components/DevProForma';
 import ZoningPanel from './components/ZoningPanel';
 import LoadingState from './components/LoadingState';
 import { analyzeProperty } from './services/api';
@@ -85,7 +86,10 @@ export default function App() {
               <NeighborhoodProfile profile={data.neighborhoodProfile} />
             </div>
 
-            <RiskPanel risks={data.risks} />
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <DevProForma devAnalysis={data.developmentAnalysis} valuation={data.valuation} zoning={data.zoning} />
+              <RiskPanel risks={data.risks} />
+            </div>
 
             <ZoningPanel zoning={data.zoning} />
 

@@ -27,6 +27,7 @@ async function fetchRiskData(address, geo) {
     webSearch(`"${city}" "${state}" foreclosure rate distressed properties auction 2025`, 8),
     webSearch(`"${city}" "${state}" homeowners insurance cost average premium rate 2025`, 8),
     webSearch(`"${city}" "${state}" rent growth year over year average rent increase 2025 2026`, 8),
+    webSearch(`"${city}" "${state}" construction cost per square foot building cost residential commercial development impact fees 2025`, 8),
   ]);
 
   return {
@@ -46,6 +47,7 @@ async function fetchRiskData(address, geo) {
     foreclosureSearch: results[13].status === 'fulfilled' ? results[13].value : { results: [], summary: null },
     insuranceSearch: results[14].status === 'fulfilled' ? results[14].value : { results: [], summary: null },
     rentGrowthSearch: results[15].status === 'fulfilled' ? results[15].value : { results: [], summary: null },
+    constructionCostSearch: results[16].status === 'fulfilled' ? results[16].value : { results: [], summary: null },
     source: 'USGS, NOAA, NREL, EPA, Web Search',
   };
 }

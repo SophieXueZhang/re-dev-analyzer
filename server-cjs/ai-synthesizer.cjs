@@ -152,6 +152,24 @@ Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
     "ltv": "XX% (loan-to-value at 80% with 20% down)",
     "assumptions": "brief string of key assumptions used"
   },
+  "developmentAnalysis": {
+    "maxBuildableSqFt": number (FAR * lot size in sqft, from zoning data),
+    "constructionCostSqFt": number (hard cost per sqft for this market from research),
+    "totalHardCosts": number (constructionCostSqFt * maxBuildableSqFt),
+    "softCostsPct": number (typically 20-25, as percentage),
+    "totalDevelopmentCost": number (land + hard + soft + 10% contingency),
+    "stabilizedNOI": number (annual NOI at stabilized occupancy),
+    "yieldOnCost": number (stabilizedNOI / totalDevelopmentCost * 100),
+    "exitCapRate": number (market cap rate, typically 0.5-1% above yield on cost),
+    "exitValue": number (stabilizedNOI / exitCapRate),
+    "developerProfit": number (exitValue - totalDevelopmentCost),
+    "profitMargin": number (developerProfit / totalDevelopmentCost * 100),
+    "constructionLoanPct": 65,
+    "equityRequired": number (totalDevelopmentCost * 0.35),
+    "constructionTimeline": "XX months",
+    "developmentSpread": number (yieldOnCost - exitCapRate, positive = profitable),
+    "feasibility": "STRONG or MARGINAL or NOT_FEASIBLE"
+  },
   "dataSources": ["list all real sources used"],
   "quickTake": "3-4 sentence executive summary with REAL data"
 }`;
@@ -560,6 +578,16 @@ function buildContext(address, geo, prop, zoning, risk, census) {
   }
   ctx += `\n`;
 
+  // --- CONSTRUCTION COSTS ---
+  ctx += `## 29. CONSTRUCTION COSTS & DEVELOPMENT FEES (Web Search)\n`;
+  if (risk.constructionCostSearch?.summary) ctx += `AI Summary: ${risk.constructionCostSearch.summary}\n`;
+  if (risk.constructionCostSearch?.results?.length) {
+    for (const r of risk.constructionCostSearch.results) {
+      ctx += `  - [${r.title}](${r.url}): ${r.description}\n`;
+    }
+  }
+  ctx += `\n`;
+
   // --- JURISDICTION ---
   ctx += `## LOCATION CONTEXT\n`;
   ctx += `- Jurisdiction: ${zoning.jurisdiction?.city}, ${zoning.jurisdiction?.state}\n`;
@@ -568,7 +596,7 @@ function buildContext(address, geo, prop, zoning, risk, census) {
   if (prop.geo?.censusTract) ctx += `- Census Tract: ${prop.geo.censusTract.name}\n`;
   ctx += `\n`;
 
-  ctx += `INSTRUCTIONS: Synthesize ALL the above real data into the JSON analysis. Use actual numbers from Census ACS, USGS, NREL, and web search results. Calculate cap rate, NOI, and GRM from real Census median rent and home values when property-specific data isn't available. For marketActivity: calculate priceToRentRatio as estimatedValue / (estimatedMonthlyRent * 12). Use insurance search data for insuranceEstimate and expenseBreakdown.insurance. Use rent growth search for rentGrowthYoY. Calculate DSCR as annualNOI / annualDebtService. For expenseBreakdown: estimate each line item from real data when possible. Mark estimates with [Estimated]. NEVER use "N/A" if you can calculate or estimate from available data.`;
+  ctx += `INSTRUCTIONS: Synthesize ALL the above real data into the JSON analysis. Use actual numbers from Census ACS, USGS, NREL, and web search results. Calculate cap rate, NOI, and GRM from real Census median rent and home values when property-specific data isn't available. For marketActivity: calculate priceToRentRatio as estimatedValue / (estimatedMonthlyRent * 12). Use insurance search data for insuranceEstimate and expenseBreakdown.insurance. Use rent growth search for rentGrowthYoY. Calculate DSCR as annualNOI / annualDebtService. For expenseBreakdown: estimate each line item from real data when possible. For developmentAnalysis: use lot size from property data, FAR from zoning, and construction cost search to calculate feasibility. yieldOnCost = stabilizedNOI / totalDevelopmentCost. developmentSpread = yieldOnCost - exitCapRate (both as decimals, e.g. 0.065 - 0.055 = 0.01 = positive). Mark estimates with [Estimated]. NEVER use "N/A" if you can calculate or estimate from available data.`;
 
   return ctx;
 }
