@@ -62,6 +62,8 @@ export default function MarketPulse({ marketActivity, valuation }) {
   const foreclosure = marketActivity.foreclosureRate;
   const priceToRent = parseNum(marketActivity.priceToRentRatio);
   const absorption = marketActivity.absorptionRate;
+  const insuranceEst = parseNum(marketActivity.insuranceEstimate);
+  const rentGrowth = marketActivity.rentGrowthYoY;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 animate-slide-up stagger-3">
@@ -126,7 +128,7 @@ export default function MarketPulse({ marketActivity, valuation }) {
           <DollarSign className="w-3.5 h-3.5 text-slate-500" />
           <span className="text-xs font-semibold text-slate-600">{t('market.holdingCosts')}</span>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
           <div>
             <div className="text-[10px] text-slate-400">{t('market.taxRate')}</div>
             <div className="text-sm font-bold text-slate-700">{taxRate || '--'}</div>
@@ -136,8 +138,16 @@ export default function MarketPulse({ marketActivity, valuation }) {
             <div className="text-sm font-bold text-slate-700">{annualTax != null ? `$${annualTax.toLocaleString()}` : '--'}</div>
           </div>
           <div>
+            <div className="text-[10px] text-slate-400">{t('market.insurance')}</div>
+            <div className="text-sm font-bold text-slate-700">{insuranceEst != null ? `$${insuranceEst.toLocaleString()}` : '--'}</div>
+          </div>
+          <div>
             <div className="text-[10px] text-slate-400">{t('market.hoa')}</div>
             <div className="text-sm font-bold text-slate-700">{hoa || '--'}</div>
+          </div>
+          <div>
+            <div className="text-[10px] text-slate-400">{t('market.rentGrowth')}</div>
+            <div className="text-sm font-bold text-slate-700">{rentGrowth || '--'}</div>
           </div>
         </div>
       </div>

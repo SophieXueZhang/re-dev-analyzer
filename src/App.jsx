@@ -76,7 +76,7 @@ export default function App() {
             <InvestmentThesis thesis={data.investmentThesis} />
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <DealCalculator financialModel={data.financialModel} valuation={data.valuation} />
+              <DealCalculator financialModel={data.financialModel} valuation={data.valuation} marketActivity={data.marketActivity} />
               <MarketPulse marketActivity={data.marketActivity} valuation={data.valuation} />
             </div>
 

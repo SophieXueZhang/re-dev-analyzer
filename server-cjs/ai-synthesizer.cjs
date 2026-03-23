@@ -109,7 +109,9 @@ Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
     "propertyTaxRate": "X.XX% effective rate",
     "annualPropertyTax": number_estimated_annual_tax,
     "hoaFees": "$XXX/month or N/A if none",
-    "priceToRentRatio": number (price / annual rent - above 20 = better to rent)
+    "priceToRentRatio": number (price / annual rent - above 20 = better to rent),
+    "insuranceEstimate": number_annual_homeowners_insurance_estimate,
+    "rentGrowthYoY": "X.X% year-over-year rent growth rate"
   },
   "investmentThesis": {
     "verdict": "BUY or HOLD or AVOID",
@@ -138,6 +140,15 @@ Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
     "annualCashFlow": number,
     "breakEvenOccupancy": "XX%",
     "fiveYearEquity": number_appreciation_plus_principal_paydown,
+    "expenseBreakdown": {
+      "vacancy": number_monthly (5-8% of gross rent),
+      "maintenance": number_monthly (5-10% of gross rent as reserve),
+      "management": number_monthly (8-12% of gross rent),
+      "insurance": number_monthly (from insurance research),
+      "propertyTax": number_monthly (from tax research)
+    },
+    "dscr": number (annual NOI / annual debt service, 1.25+ is good),
+    "ltv": "XX% (loan-to-value at 80% with 20% down)",
     "assumptions": "brief string of key assumptions used"
   },
   "dataSources": ["list all real sources used"],
@@ -528,6 +539,26 @@ function buildContext(address, geo, prop, zoning, risk, census) {
   }
   ctx += `\n`;
 
+  // --- INSURANCE ---
+  ctx += `## 27. HOMEOWNERS INSURANCE COSTS (Web Search)\n`;
+  if (risk.insuranceSearch?.summary) ctx += `AI Summary: ${risk.insuranceSearch.summary}\n`;
+  if (risk.insuranceSearch?.results?.length) {
+    for (const r of risk.insuranceSearch.results) {
+      ctx += `  - [${r.title}](${r.url}): ${r.description}\n`;
+    }
+  }
+  ctx += `\n`;
+
+  // --- RENT GROWTH ---
+  ctx += `## 28. RENT GROWTH TRENDS (Web Search)\n`;
+  if (risk.rentGrowthSearch?.summary) ctx += `AI Summary: ${risk.rentGrowthSearch.summary}\n`;
+  if (risk.rentGrowthSearch?.results?.length) {
+    for (const r of risk.rentGrowthSearch.results) {
+      ctx += `  - [${r.title}](${r.url}): ${r.description}\n`;
+    }
+  }
+  ctx += `\n`;
+
   // --- JURISDICTION ---
   ctx += `## LOCATION CONTEXT\n`;
   ctx += `- Jurisdiction: ${zoning.jurisdiction?.city}, ${zoning.jurisdiction?.state}\n`;
@@ -536,7 +567,7 @@ function buildContext(address, geo, prop, zoning, risk, census) {
   if (prop.geo?.censusTract) ctx += `- Census Tract: ${prop.geo.censusTract.name}\n`;
   ctx += `\n`;
 
-  ctx += `INSTRUCTIONS: Synthesize ALL the above real data into the JSON analysis. Use actual numbers from Census ACS, USGS, NREL, and web search results. Calculate cap rate, NOI, and GRM from real Census median rent and home values when property-specific data isn't available. For marketActivity: calculate priceToRentRatio as estimatedValue / (estimatedMonthlyRent * 12). Mark estimates with [Estimated]. NEVER use "N/A" if you can calculate or estimate from available data.`;
+  ctx += `INSTRUCTIONS: Synthesize ALL the above real data into the JSON analysis. Use actual numbers from Census ACS, USGS, NREL, and web search results. Calculate cap rate, NOI, and GRM from real Census median rent and home values when property-specific data isn't available. For marketActivity: calculate priceToRentRatio as estimatedValue / (estimatedMonthlyRent * 12). Use insurance search data for insuranceEstimate and expenseBreakdown.insurance. Use rent growth search for rentGrowthYoY. Calculate DSCR as annualNOI / annualDebtService. For expenseBreakdown: estimate each line item from real data when possible. Mark estimates with [Estimated]. NEVER use "N/A" if you can calculate or estimate from available data.`;
 
   return ctx;
 }

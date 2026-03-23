@@ -25,6 +25,8 @@ async function fetchRiskData(address, geo) {
     webSearch(`"${city}" "${state}" days on market median DOM inventory months supply absorption rate list to sale ratio 2025`, 8),
     webSearch(`"${address}" property tax rate mill rate ${county} ${state} tax assessment HOA fees`, 8),
     webSearch(`"${city}" "${state}" foreclosure rate distressed properties auction 2025`, 8),
+    webSearch(`"${city}" "${state}" homeowners insurance cost average premium rate 2025`, 8),
+    webSearch(`"${city}" "${state}" rent growth year over year average rent increase 2025 2026`, 8),
   ]);
 
   return {
@@ -42,6 +44,8 @@ async function fetchRiskData(address, geo) {
     marketActivitySearch: results[11].status === 'fulfilled' ? results[11].value : { results: [], summary: null },
     propertyTaxSearch: results[12].status === 'fulfilled' ? results[12].value : { results: [], summary: null },
     foreclosureSearch: results[13].status === 'fulfilled' ? results[13].value : { results: [], summary: null },
+    insuranceSearch: results[14].status === 'fulfilled' ? results[14].value : { results: [], summary: null },
+    rentGrowthSearch: results[15].status === 'fulfilled' ? results[15].value : { results: [], summary: null },
     source: 'USGS, NOAA, NREL, EPA, Web Search',
   };
 }
