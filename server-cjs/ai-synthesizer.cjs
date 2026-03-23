@@ -111,7 +111,8 @@ Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
     "hoaFees": "$XXX/month or N/A if none",
     "priceToRentRatio": number (price / annual rent - above 20 = better to rent),
     "insuranceEstimate": number_annual_homeowners_insurance_estimate,
-    "rentGrowthYoY": "X.X% year-over-year rent growth rate"
+    "rentGrowthYoY": "X.X% year-over-year rent growth rate",
+    "rentToIncomeRatio": number_percent (monthly rent / area median monthly income * 100, calculate from Census median household income; 30%+ means strained affordability)
   },
   "investmentThesis": {
     "verdict": "BUY or HOLD or AVOID",

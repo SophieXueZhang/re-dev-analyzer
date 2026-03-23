@@ -1,4 +1,4 @@
-import { Calculator, DollarSign, TrendingUp, Percent, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calculator, DollarSign, TrendingUp, Percent, ChevronDown, ChevronUp, CheckCircle, XCircle } from 'lucide-react';
 import { useState, useMemo, useCallback } from 'react';
 import { useI18n } from '../i18n/I18nContext';
 
@@ -115,10 +115,44 @@ export default function DealCalculator({ financialModel, valuation, marketActivi
     const totalCashFlows = annualCashFlow * 5 + exitProceeds;
     const equityMultiple = down > 0 ? totalCashFlows / down : 0;
 
+    // 1% Rule: monthly rent / purchase price
+    const onePercentRule = price > 0 ? (rent / price) * 100 : 0;
+    const passesOnePercent = onePercentRule >= 1.0;
+
+    // GRM = price / annual rent
+    const grm = rent > 0 ? price / (rent * 12) : 0;
+
+    // Total Cash Needed: down + closing costs (3%) + 6 months reserves
+    const closingCosts = price * 0.03;
+    const reserves = mortgage * 6;
+    const totalCashNeeded = down + closingCosts + reserves;
+
+    // Depreciation tax shield (residential: building ~80% of value / 27.5 years, 24% marginal tax rate)
+    const buildingValue = price * 0.80;
+    const annualDepreciation = buildingValue / 27.5;
+    const taxShield = annualDepreciation * 0.24;
+
+    // Year-1 Annual ROI = (cash flow + first-year appreciation + first-year principal paydown + tax shield) / total cash invested
+    const firstYearAppreciation = price * appRate;
+    const firstYearPrincipal = (() => {
+      let pp = 0, bal = loan;
+      for (let m = 0; m < 12; m++) {
+        const int = bal * monthlyRate;
+        pp += mortgage - int;
+        bal -= (mortgage - int);
+      }
+      return pp;
+    })();
+    const annualROI = totalCashNeeded > 0
+      ? ((annualCashFlow + firstYearAppreciation + firstYearPrincipal + taxShield) / totalCashNeeded) * 100
+      : 0;
+
     return {
       down, loan, mortgage, noi, cashFlow, annualCashFlow, annualNOI, annualDebt,
       capRate, cashOnCash, breakEven, fiveYearEquity,
       dscr, ltv, irr, equityMultiple,
+      onePercentRule, passesOnePercent, grm, totalCashNeeded, closingCosts, reserves,
+      annualDepreciation, taxShield, annualROI,
       expenses: { vacancy, maintenance, management, insurance: insuranceMonthly, tax: taxMonthly, total: totalExpenses },
     };
   }, [price, downPct, rate, rent, vacancyPct, maintenancePct, managementPct, insuranceMonthly, taxMonthly]);
@@ -129,6 +163,7 @@ export default function DealCalculator({ financialModel, valuation, marketActivi
   }, []);
 
   const dscrColor = calc.dscr >= 1.25 ? 'text-emerald-600' : calc.dscr >= 1.0 ? 'text-amber-600' : 'text-red-600';
+  const rentToIncome = marketActivity?.rentToIncomeRatio != null ? parseNum(marketActivity.rentToIncomeRatio) : null;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 animate-slide-up stagger-3">
@@ -223,7 +258,7 @@ export default function DealCalculator({ financialModel, valuation, marketActivi
       </div>
 
       {/* Bottom row */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="bg-slate-50 rounded-lg px-3 py-2 text-center">
           <div className="text-xs text-slate-500">{t('deal.annualCashFlow')}</div>
           <div className={`text-sm font-bold ${calc.annualCashFlow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
@@ -241,6 +276,49 @@ export default function DealCalculator({ financialModel, valuation, marketActivi
             {fmt(calc.fiveYearEquity)}
           </div>
         </div>
+      </div>
+
+      {/* Quick Rules & Investor Metrics */}
+      <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl px-4 py-3">
+        <div className="text-xs font-semibold text-slate-600 mb-2">{t('deal.quickRules')}</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="flex items-center gap-1.5">
+            {calc.passesOnePercent
+              ? <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+              : <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />}
+            <div>
+              <div className="text-[10px] text-slate-400">{t('deal.onePercentRule')}</div>
+              <div className={`text-sm font-bold ${calc.passesOnePercent ? 'text-emerald-600' : 'text-red-500'}`}>{calc.onePercentRule.toFixed(2)}%</div>
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] text-slate-400">{t('deal.grm')}</div>
+            <div className="text-sm font-bold text-slate-700">{calc.grm > 0 ? calc.grm.toFixed(1) : '--'}</div>
+          </div>
+          <div>
+            <div className="text-[10px] text-slate-400">{t('deal.annualROI')}</div>
+            <div className={`text-sm font-bold ${calc.annualROI >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{calc.annualROI.toFixed(1)}%</div>
+          </div>
+          <div>
+            <div className="text-[10px] text-slate-400">{t('deal.totalCash')}</div>
+            <div className="text-sm font-bold text-slate-700">{fmt(calc.totalCashNeeded)}</div>
+          </div>
+          <div>
+            <div className="text-[10px] text-slate-400">{t('deal.depreciation')}</div>
+            <div className="text-sm font-bold text-slate-700">{fmt(calc.annualDepreciation)}<span className="text-[9px] font-normal text-slate-400">/{t('deal.yr')}</span></div>
+          </div>
+          <div>
+            <div className="text-[10px] text-slate-400">{t('deal.taxShield')}</div>
+            <div className="text-sm font-bold text-emerald-600">{fmt(calc.taxShield)}<span className="text-[9px] font-normal text-slate-400">/{t('deal.yr')}</span></div>
+          </div>
+        </div>
+        {rentToIncome != null && (
+          <div className="mt-2 pt-2 border-t border-slate-200 flex items-center gap-2">
+            <span className="text-[10px] text-slate-400">{t('deal.rentToIncome')}</span>
+            <span className={`text-sm font-bold ${rentToIncome > 30 ? 'text-amber-600' : 'text-emerald-600'}`}>{rentToIncome.toFixed(0)}%</span>
+            <span className="text-[9px] text-slate-400">{rentToIncome > 30 ? t('deal.rentStrained') : t('deal.rentAffordable')}</span>
+          </div>
+        )}
       </div>
 
       {/* Assumptions */}
