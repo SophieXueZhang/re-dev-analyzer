@@ -1,4 +1,4 @@
-import { TrendingUp, Award, Database, ChevronDown, ChevronUp, Calculator, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { TrendingUp, Award, Database, Calculator, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { useState, useMemo, useCallback } from 'react';
 import { useI18n } from '../i18n/I18nContext';
 import { DEFAULT_WEIGHTS, recalcScore } from '../utils/scoring';
@@ -20,7 +20,6 @@ function getScoreColor(score) {
 export default function ScoreCard({ data }) {
   const { quickTake, property, risks } = data;
   const { t } = useI18n();
-  const [showBreakdown, setShowBreakdown] = useState(false);
   const [editing, setEditing] = useState(false);
   const [weights, setWeights] = useState(() => ({ ...DEFAULT_WEIGHTS }));
 
@@ -111,91 +110,83 @@ export default function ScoreCard({ data }) {
       {/* Score Breakdown */}
       {scoreBreakdown && scoreBreakdown.length > 0 && (
         <div className="mt-6 border-t border-slate-200 pt-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => setShowBreakdown(!showBreakdown)}
-              className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 transition-colors"
-            >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 text-sm text-slate-600 font-medium">
               <Calculator className="w-4 h-4" />
               <span>{t('score.breakdownTitle')}</span>
-              {showBreakdown ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </button>
-            {showBreakdown && (
-              <div className="flex items-center gap-2">
-                {isCustom && (
-                  <button
-                    onClick={resetWeights}
-                    className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    {t('score.reset')}
-                  </button>
-                )}
+            </div>
+            <div className="flex items-center gap-2">
+              {isCustom && (
                 <button
-                  onClick={() => setEditing(!editing)}
-                  className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors ${
-                    editing
-                      ? 'bg-brand-50 text-brand-600 border border-brand-200'
-                      : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
-                  }`}
+                  onClick={resetWeights}
+                  className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors"
                 >
-                  <SlidersHorizontal className="w-3 h-3" />
-                  {t('score.adjustWeights')}
+                  <RotateCcw className="w-3 h-3" />
+                  {t('score.reset')}
                 </button>
-              </div>
-            )}
+              )}
+              <button
+                onClick={() => setEditing(!editing)}
+                className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors ${
+                  editing
+                    ? 'bg-brand-50 text-brand-600 border border-brand-200'
+                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <SlidersHorizontal className="w-3 h-3" />
+                {t('score.adjustWeights')}
+              </button>
+            </div>
           </div>
 
-          {showBreakdown && (
-            <div className="mt-3 space-y-2">
-              {/* Header */}
-              <div className="grid grid-cols-12 gap-2 text-xs text-slate-400 font-medium px-2">
-                <div className={editing ? 'col-span-3' : 'col-span-4'}>{t('score.category')}</div>
-                <div className="col-span-2 text-center">{t('score.riskScore')}</div>
-                <div className="col-span-2 text-center">{t('score.componentScore')}</div>
-                <div className={`text-center ${editing ? 'col-span-3' : 'col-span-2'}`}>{t('score.weight')}</div>
-                <div className="col-span-2 text-right">{t('score.weighted')}</div>
+          <div className="space-y-2">
+            {/* Header */}
+            <div className="grid grid-cols-12 gap-2 text-xs text-slate-400 font-medium px-2">
+              <div className={editing ? 'col-span-3' : 'col-span-4'}>{t('score.category')}</div>
+              <div className="col-span-2 text-center">{t('score.riskScore')}</div>
+              <div className="col-span-2 text-center">{t('score.componentScore')}</div>
+              <div className={`text-center ${editing ? 'col-span-3' : 'col-span-2'}`}>{t('score.weight')}</div>
+              <div className="col-span-2 text-right">{t('score.weighted')}</div>
+            </div>
+            {/* Rows */}
+            {scoreBreakdown.map((item, idx) => (
+              <div key={idx} className="grid grid-cols-12 gap-2 text-xs items-center bg-slate-50 rounded-lg px-2 py-1.5">
+                <div className={`font-medium text-slate-700 ${editing ? 'col-span-3' : 'col-span-4'}`}>
+                  {item.category}
+                </div>
+                <div className="col-span-2 text-center text-slate-500">{item.riskScore}/10</div>
+                <div className="col-span-2 text-center text-slate-500">{item.componentScore}</div>
+                <div className={`flex items-center justify-center gap-1 ${editing ? 'col-span-3' : 'col-span-2'}`}>
+                  {editing ? (
+                    <>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="5"
+                        value={weights[item.category]}
+                        onChange={e => handleWeightChange(item.category, e.target.value)}
+                        className="w-16 h-1 accent-brand-500"
+                      />
+                      <span className="text-slate-500 w-8 text-right tabular-nums">{weights[item.category]}%</span>
+                    </>
+                  ) : (
+                    <span className="text-slate-400">{item.weight}%</span>
+                  )}
+                </div>
+                <div className="col-span-2 text-right font-semibold" style={{ color: getScoreColor(item.componentScore) }}>
+                  {item.weightedScore}
+                </div>
               </div>
-              {/* Rows */}
-              {scoreBreakdown.map((item, idx) => (
-                <div key={idx} className="grid grid-cols-12 gap-2 text-xs items-center bg-slate-50 rounded-lg px-2 py-1.5">
-                  <div className={`font-medium text-slate-700 ${editing ? 'col-span-3' : 'col-span-4'}`}>
-                    {item.category}
-                  </div>
-                  <div className="col-span-2 text-center text-slate-500">{item.riskScore}/10</div>
-                  <div className="col-span-2 text-center text-slate-500">{item.componentScore}</div>
-                  <div className={`flex items-center justify-center gap-1 ${editing ? 'col-span-3' : 'col-span-2'}`}>
-                    {editing ? (
-                      <>
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          step="5"
-                          value={weights[item.category]}
-                          onChange={e => handleWeightChange(item.category, e.target.value)}
-                          className="w-16 h-1 accent-brand-500"
-                        />
-                        <span className="text-slate-500 w-8 text-right tabular-nums">{weights[item.category]}%</span>
-                      </>
-                    ) : (
-                      <span className="text-slate-400">{item.weight}%</span>
-                    )}
-                  </div>
-                  <div className="col-span-2 text-right font-semibold" style={{ color: getScoreColor(item.componentScore) }}>
-                    {item.weightedScore}
-                  </div>
-                </div>
-              ))}
-              {/* Total */}
-              <div className="grid grid-cols-12 gap-2 text-sm items-center border-t border-slate-200 pt-2 px-2">
-                <div className="col-span-10 font-semibold text-slate-700">{t('score.total')}</div>
-                <div className="col-span-2 text-right font-bold text-lg" style={{ color: scoreColor }}>
-                  {overallScore}
-                </div>
+            ))}
+            {/* Total */}
+            <div className="grid grid-cols-12 gap-2 text-sm items-center border-t border-slate-200 pt-2 px-2">
+              <div className="col-span-10 font-semibold text-slate-700">{t('score.total')}</div>
+              <div className="col-span-2 text-right font-bold text-lg" style={{ color: scoreColor }}>
+                {overallScore}
               </div>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>
