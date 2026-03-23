@@ -2,7 +2,10 @@ import { useState } from 'react';
 import Header from './components/Header';
 import AddressInput from './components/AddressInput';
 import ScoreCard from './components/ScoreCard';
+import InvestmentThesis from './components/InvestmentThesis';
+import DealCalculator from './components/DealCalculator';
 import ValuationPanel from './components/ValuationPanel';
+import NeighborhoodProfile from './components/NeighborhoodProfile';
 import RiskPanel from './components/RiskPanel';
 import ZoningPanel from './components/ZoningPanel';
 import LoadingState from './components/LoadingState';
@@ -69,8 +72,15 @@ export default function App() {
           <div className="space-y-6">
             <ScoreCard data={data} />
 
+            <InvestmentThesis thesis={data.investmentThesis} />
+
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <DealCalculator financialModel={data.financialModel} valuation={data.valuation} />
               <ValuationPanel valuation={data.valuation} />
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <NeighborhoodProfile profile={data.neighborhoodProfile} />
               <RiskPanel risks={data.risks} />
             </div>
 

@@ -104,6 +104,35 @@ Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
     ],
     "developmentPotential": "analysis based on real zoning data"
   },
+  "investmentThesis": {
+    "verdict": "BUY or HOLD or AVOID",
+    "confidence": "HIGH or MEDIUM or LOW",
+    "targetInvestor": "e.g. value-add investor, buy-and-hold, developer, first-time buyer",
+    "oneLiner": "single compelling sentence summarizing the investment case",
+    "greenFlags": ["up to 5 positive signals from the data"],
+    "redFlags": ["up to 5 concerns from the data"],
+    "actionItems": ["up to 3 concrete next steps for the investor"]
+  },
+  "neighborhoodProfile": {
+    "walkScore": 0-100,
+    "schoolQuality": "A-F grade with brief note",
+    "crimeLevel": "LOW or MODERATE or HIGH with brief context",
+    "demographicTrend": "growing or stable or declining with key stat",
+    "majorEmployers": ["top 3 nearby employers"],
+    "commuteAccess": "brief transit/highway description",
+    "supplyPipeline": "new construction activity level and context"
+  },
+  "financialModel": {
+    "acquisitionCost": number_estimated_total_including_closing_costs,
+    "downPayment20": number_20pct_down,
+    "monthlyMortgage": number_at_current_7pct_rate_30yr,
+    "monthlyNOI": number_monthly_net_operating_income,
+    "monthlyCashFlow": number_NOI_minus_mortgage,
+    "annualCashFlow": number,
+    "breakEvenOccupancy": "XX%",
+    "fiveYearEquity": number_appreciation_plus_principal_paydown,
+    "assumptions": "brief string of key assumptions used"
+  },
   "dataSources": ["list of real sources used"],
   "quickTake": "3-4 sentence executive summary referencing REAL data points"
 }`;
@@ -121,7 +150,7 @@ Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
         { role: 'user', content: realDataContext },
       ],
       temperature: 0.2,
-      max_tokens: 8000,
+      max_tokens: 12000,
     }),
   });
 

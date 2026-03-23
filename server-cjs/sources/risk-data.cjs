@@ -18,6 +18,9 @@ async function fetchRiskData(address, geo) {
     webSearch(`"${address}" flood zone environmental risk hazard FEMA ${city} ${state}`, 8),
     webSearch(`${city} ${state} real estate market trend 2025 2026 vacancy rate rent growth cap rate`, 8),
     fetchOpportunityZone(geo),
+    webSearch(`"${city}" "${state}" school rating crime rate safety neighborhood 2025 2026`, 8),
+    webSearch(`"${city}" "${state}" population growth demographic trend employment major employers 2025`, 8),
+    webSearch(`"${city}" "${state}" new construction multifamily housing development pipeline permits 2025 2026`, 8),
   ]);
 
   return {
@@ -29,6 +32,9 @@ async function fetchRiskData(address, geo) {
     envSearch: results[5].status === 'fulfilled' ? results[5].value : { results: [], summary: null },
     marketSearch: results[6].status === 'fulfilled' ? results[6].value : { results: [], summary: null },
     opportunityZone: results[7].status === 'fulfilled' ? results[7].value : null,
+    schoolCrimeSearch: results[8].status === 'fulfilled' ? results[8].value : { results: [], summary: null },
+    demographicSearch: results[9].status === 'fulfilled' ? results[9].value : { results: [], summary: null },
+    supplySearch: results[10].status === 'fulfilled' ? results[10].value : { results: [], summary: null },
     source: 'USGS, NOAA, NREL, EPA, Web Search',
   };
 }

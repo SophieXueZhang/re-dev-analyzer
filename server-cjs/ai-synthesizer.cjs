@@ -99,6 +99,35 @@ Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
     ],
     "developmentPotential": "analysis"
   },
+  "investmentThesis": {
+    "verdict": "BUY or HOLD or AVOID",
+    "confidence": "HIGH or MEDIUM or LOW",
+    "targetInvestor": "e.g. value-add investor, buy-and-hold, developer, first-time buyer",
+    "oneLiner": "single compelling sentence summarizing the investment case",
+    "greenFlags": ["up to 5 positive signals from the data"],
+    "redFlags": ["up to 5 concerns from the data"],
+    "actionItems": ["up to 3 concrete next steps for the investor"]
+  },
+  "neighborhoodProfile": {
+    "walkScore": 0-100,
+    "schoolQuality": "A-F grade with brief note",
+    "crimeLevel": "LOW or MODERATE or HIGH with brief context",
+    "demographicTrend": "growing or stable or declining with key stat",
+    "majorEmployers": ["top 3 nearby employers"],
+    "commuteAccess": "brief transit/highway description",
+    "supplyPipeline": "new construction activity level and context"
+  },
+  "financialModel": {
+    "acquisitionCost": number_estimated_total_including_closing_costs,
+    "downPayment20": number_20pct_down,
+    "monthlyMortgage": number_at_current_7pct_rate_30yr,
+    "monthlyNOI": number_monthly_net_operating_income,
+    "monthlyCashFlow": number_NOI_minus_mortgage,
+    "annualCashFlow": number,
+    "breakEvenOccupancy": "XX%",
+    "fiveYearEquity": number_appreciation_plus_principal_paydown,
+    "assumptions": "brief string of key assumptions used"
+  },
   "dataSources": ["list all real sources used"],
   "quickTake": "3-4 sentence executive summary with REAL data"
 }`;
@@ -116,7 +145,7 @@ Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
         { role: 'user', content: context },
       ],
       temperature: 0.15,
-      max_tokens: 8000,
+      max_tokens: 12000,
     }),
   });
 
@@ -422,6 +451,36 @@ function buildContext(address, geo, prop, zoning, risk, census) {
   if (risk.marketSearch?.summary) ctx += `AI Summary: ${risk.marketSearch.summary}\n`;
   if (risk.marketSearch?.results?.length) {
     for (const r of risk.marketSearch.results) {
+      ctx += `  - [${r.title}](${r.url}): ${r.description}\n`;
+    }
+  }
+  ctx += `\n`;
+
+  // --- SCHOOL & CRIME ---
+  ctx += `## 21. SCHOOLS & CRIME DATA (Web Search)\n`;
+  if (risk.schoolCrimeSearch?.summary) ctx += `AI Summary: ${risk.schoolCrimeSearch.summary}\n`;
+  if (risk.schoolCrimeSearch?.results?.length) {
+    for (const r of risk.schoolCrimeSearch.results) {
+      ctx += `  - [${r.title}](${r.url}): ${r.description}\n`;
+    }
+  }
+  ctx += `\n`;
+
+  // --- DEMOGRAPHIC TRENDS ---
+  ctx += `## 22. DEMOGRAPHIC & EMPLOYMENT TRENDS (Web Search)\n`;
+  if (risk.demographicSearch?.summary) ctx += `AI Summary: ${risk.demographicSearch.summary}\n`;
+  if (risk.demographicSearch?.results?.length) {
+    for (const r of risk.demographicSearch.results) {
+      ctx += `  - [${r.title}](${r.url}): ${r.description}\n`;
+    }
+  }
+  ctx += `\n`;
+
+  // --- SUPPLY PIPELINE ---
+  ctx += `## 23. NEW CONSTRUCTION & SUPPLY PIPELINE (Web Search)\n`;
+  if (risk.supplySearch?.summary) ctx += `AI Summary: ${risk.supplySearch.summary}\n`;
+  if (risk.supplySearch?.results?.length) {
+    for (const r of risk.supplySearch.results) {
       ctx += `  - [${r.title}](${r.url}): ${r.description}\n`;
     }
   }
