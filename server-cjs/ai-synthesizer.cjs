@@ -99,6 +99,18 @@ Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
     ],
     "developmentPotential": "analysis"
   },
+  "marketActivity": {
+    "medianDOM": number_days_on_market,
+    "listToSaleRatio": "XX.X% (e.g. 98.5% means selling at 1.5% below asking)",
+    "monthsOfInventory": number_months,
+    "absorptionRate": "X.X% per month",
+    "marketType": "SELLER or BALANCED or BUYER",
+    "foreclosureRate": "X.X% or LOW/MODERATE/HIGH with context",
+    "propertyTaxRate": "X.XX% effective rate",
+    "annualPropertyTax": number_estimated_annual_tax,
+    "hoaFees": "$XXX/month or N/A if none",
+    "priceToRentRatio": number (price / annual rent - above 20 = better to rent)
+  },
   "investmentThesis": {
     "verdict": "BUY or HOLD or AVOID",
     "confidence": "HIGH or MEDIUM or LOW",
@@ -145,7 +157,7 @@ Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
         { role: 'user', content: context },
       ],
       temperature: 0.15,
-      max_tokens: 12000,
+      max_tokens: 14000,
     }),
   });
 
@@ -486,6 +498,36 @@ function buildContext(address, geo, prop, zoning, risk, census) {
   }
   ctx += `\n`;
 
+  // --- MARKET ACTIVITY (DOM, Inventory, List-to-Sale) ---
+  ctx += `## 24. MARKET ACTIVITY - DOM, INVENTORY, LIST-TO-SALE (Web Search)\n`;
+  if (risk.marketActivitySearch?.summary) ctx += `AI Summary: ${risk.marketActivitySearch.summary}\n`;
+  if (risk.marketActivitySearch?.results?.length) {
+    for (const r of risk.marketActivitySearch.results) {
+      ctx += `  - [${r.title}](${r.url}): ${r.description}\n`;
+    }
+  }
+  ctx += `\n`;
+
+  // --- PROPERTY TAX ---
+  ctx += `## 25. PROPERTY TAX & HOA (Web Search)\n`;
+  if (risk.propertyTaxSearch?.summary) ctx += `AI Summary: ${risk.propertyTaxSearch.summary}\n`;
+  if (risk.propertyTaxSearch?.results?.length) {
+    for (const r of risk.propertyTaxSearch.results) {
+      ctx += `  - [${r.title}](${r.url}): ${r.description}\n`;
+    }
+  }
+  ctx += `\n`;
+
+  // --- FORECLOSURE ---
+  ctx += `## 26. FORECLOSURE & DISTRESSED PROPERTIES (Web Search)\n`;
+  if (risk.foreclosureSearch?.summary) ctx += `AI Summary: ${risk.foreclosureSearch.summary}\n`;
+  if (risk.foreclosureSearch?.results?.length) {
+    for (const r of risk.foreclosureSearch.results) {
+      ctx += `  - [${r.title}](${r.url}): ${r.description}\n`;
+    }
+  }
+  ctx += `\n`;
+
   // --- JURISDICTION ---
   ctx += `## LOCATION CONTEXT\n`;
   ctx += `- Jurisdiction: ${zoning.jurisdiction?.city}, ${zoning.jurisdiction?.state}\n`;
@@ -494,7 +536,7 @@ function buildContext(address, geo, prop, zoning, risk, census) {
   if (prop.geo?.censusTract) ctx += `- Census Tract: ${prop.geo.censusTract.name}\n`;
   ctx += `\n`;
 
-  ctx += `INSTRUCTIONS: Synthesize ALL the above real data into the JSON analysis. Use actual numbers from Census ACS, USGS, NREL, and web search results. Calculate cap rate, NOI, and GRM from real Census median rent and home values when property-specific data isn't available. Mark estimates with [Estimated]. NEVER use "N/A" if you can calculate or estimate from available data.`;
+  ctx += `INSTRUCTIONS: Synthesize ALL the above real data into the JSON analysis. Use actual numbers from Census ACS, USGS, NREL, and web search results. Calculate cap rate, NOI, and GRM from real Census median rent and home values when property-specific data isn't available. For marketActivity: calculate priceToRentRatio as estimatedValue / (estimatedMonthlyRent * 12). Mark estimates with [Estimated]. NEVER use "N/A" if you can calculate or estimate from available data.`;
 
   return ctx;
 }

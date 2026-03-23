@@ -6,6 +6,7 @@ async function fetchRiskData(address, geo) {
   const lon = geo.lon;
   const city = geo.address?.city || '';
   const state = geo.address?.state || '';
+  const county = geo.address?.county || '';
 
   console.log('  [risk] Fetching from USGS, NOAA, EPA, NREL + web search...');
 
@@ -21,6 +22,9 @@ async function fetchRiskData(address, geo) {
     webSearch(`"${city}" "${state}" school rating crime rate safety neighborhood 2025 2026`, 8),
     webSearch(`"${city}" "${state}" population growth demographic trend employment major employers 2025`, 8),
     webSearch(`"${city}" "${state}" new construction multifamily housing development pipeline permits 2025 2026`, 8),
+    webSearch(`"${city}" "${state}" days on market median DOM inventory months supply absorption rate list to sale ratio 2025`, 8),
+    webSearch(`"${address}" property tax rate mill rate ${county} ${state} tax assessment HOA fees`, 8),
+    webSearch(`"${city}" "${state}" foreclosure rate distressed properties auction 2025`, 8),
   ]);
 
   return {
@@ -35,6 +39,9 @@ async function fetchRiskData(address, geo) {
     schoolCrimeSearch: results[8].status === 'fulfilled' ? results[8].value : { results: [], summary: null },
     demographicSearch: results[9].status === 'fulfilled' ? results[9].value : { results: [], summary: null },
     supplySearch: results[10].status === 'fulfilled' ? results[10].value : { results: [], summary: null },
+    marketActivitySearch: results[11].status === 'fulfilled' ? results[11].value : { results: [], summary: null },
+    propertyTaxSearch: results[12].status === 'fulfilled' ? results[12].value : { results: [], summary: null },
+    foreclosureSearch: results[13].status === 'fulfilled' ? results[13].value : { results: [], summary: null },
     source: 'USGS, NOAA, NREL, EPA, Web Search',
   };
 }

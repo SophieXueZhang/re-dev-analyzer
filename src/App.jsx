@@ -7,6 +7,7 @@ import DealCalculator from './components/DealCalculator';
 import ValuationPanel from './components/ValuationPanel';
 import NeighborhoodProfile from './components/NeighborhoodProfile';
 import RiskPanel from './components/RiskPanel';
+import MarketPulse from './components/MarketPulse';
 import ZoningPanel from './components/ZoningPanel';
 import LoadingState from './components/LoadingState';
 import { analyzeProperty } from './services/api';
@@ -76,13 +77,15 @@ export default function App() {
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <DealCalculator financialModel={data.financialModel} valuation={data.valuation} />
-              <ValuationPanel valuation={data.valuation} />
+              <MarketPulse marketActivity={data.marketActivity} valuation={data.valuation} />
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <ValuationPanel valuation={data.valuation} />
               <NeighborhoodProfile profile={data.neighborhoodProfile} />
-              <RiskPanel risks={data.risks} />
             </div>
+
+            <RiskPanel risks={data.risks} />
 
             <ZoningPanel zoning={data.zoning} />
 
