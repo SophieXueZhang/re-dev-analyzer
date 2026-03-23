@@ -10,6 +10,7 @@ import RiskPanel from './components/RiskPanel';
 import MarketPulse from './components/MarketPulse';
 import DevProForma from './components/DevProForma';
 import FundAnalysis from './components/FundAnalysis';
+import LandUseAnalysis from './components/LandUseAnalysis';
 import ZoningPanel from './components/ZoningPanel';
 import LoadingState from './components/LoadingState';
 import { analyzeProperty } from './services/api';
@@ -94,7 +95,10 @@ export default function App() {
               <RiskPanel risks={data.risks} />
             </div>
 
-            <ZoningPanel zoning={data.zoning} />
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <ZoningPanel zoning={data.zoning} />
+              <LandUseAnalysis landUse={data.landUseAnalysis} />
+            </div>
 
             <div className="text-center py-4">
               <p className="text-xs text-slate-400 max-w-2xl mx-auto">

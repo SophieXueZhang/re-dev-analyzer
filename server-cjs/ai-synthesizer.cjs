@@ -170,6 +170,48 @@ Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
     "developmentSpread": number (yieldOnCost - exitCapRate, positive = profitable),
     "feasibility": "STRONG or MARGINAL or NOT_FEASIBLE"
   },
+  "landUseAnalysis": {
+    "farUtilization": {
+      "currentFAR": number (estimated current built FAR from sqft / lot size),
+      "maxFAR": number (from zoning buildingRestrictions),
+      "unusedFAR": number (maxFAR - currentFAR),
+      "airRightsSqFt": number (unusedFAR * lot size in sqft),
+      "utilizationPct": number (currentFAR / maxFAR * 100)
+    },
+    "densityAnalysis": {
+      "currentUnitsPerAcre": number (estimated from property data),
+      "maxAllowedDensity": "description from zoning",
+      "populationDensity": "X per sq mile from Census",
+      "densityContext": "urban / suburban / exurban / rural"
+    },
+    "transitAccess": {
+      "nearestTransit": "type and name of nearest transit",
+      "distanceMiles": number (estimated),
+      "todEligible": true or false,
+      "transitContext": "brief description"
+    },
+    "environmentalOverlay": {
+      "femaFloodZone": "zone designation (e.g. Zone X, Zone AE) or NONE",
+      "floodRisk": "NONE / LOW / MODERATE / HIGH",
+      "wetlands": "YES / NO with context if applicable",
+      "brownfieldStatus": "NONE / POTENTIAL / CONFIRMED",
+      "environmentalReview": "required / not required"
+    },
+    "futureLandUse": {
+      "compPlanDesignation": "future land use designation from comp plan",
+      "zoningAlignment": "ALIGNED / MISALIGNED / POTENTIAL_UPZONE",
+      "rezoningLikelihood": "HIGH / MEDIUM / LOW",
+      "upzoneContext": "description of future development potential or planned changes"
+    },
+    "regulatoryBurden": {
+      "estimatedImpactFees": number (total estimated development impact fees in dollars),
+      "impactFeeBreakdown": "brief description of fee types",
+      "inclusionaryHousing": "requirements if any, or NONE",
+      "historicOverlay": "YES / NO with designation if applicable",
+      "historicConstraints": "brief description of restrictions if historic"
+    },
+    "nonConformingStatus": "CONFORMING / LEGAL_NONCONFORMING / UNKNOWN with brief context"
+  },
   "dataSources": ["list all real sources used"],
   "quickTake": "3-4 sentence executive summary with REAL data"
 }`;
@@ -187,7 +229,7 @@ Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
         { role: 'user', content: context },
       ],
       temperature: 0.15,
-      max_tokens: 14000,
+      max_tokens: 16000,
     }),
   });
 
@@ -588,6 +630,36 @@ function buildContext(address, geo, prop, zoning, risk, census) {
   }
   ctx += `\n`;
 
+  // --- FLOOD ZONE / ENVIRONMENTAL ---
+  ctx += `## 30. FEMA FLOOD ZONE & ENVIRONMENTAL OVERLAY (Web Search)\n`;
+  if (risk.floodZoneSearch?.summary) ctx += `AI Summary: ${risk.floodZoneSearch.summary}\n`;
+  if (risk.floodZoneSearch?.results?.length) {
+    for (const r of risk.floodZoneSearch.results) {
+      ctx += `  - [${r.title}](${r.url}): ${r.description}\n`;
+    }
+  }
+  ctx += `\n`;
+
+  // --- COMPREHENSIVE PLAN / FUTURE LAND USE ---
+  ctx += `## 31. COMPREHENSIVE PLAN & FUTURE LAND USE (Web Search)\n`;
+  if (risk.compPlanSearch?.summary) ctx += `AI Summary: ${risk.compPlanSearch.summary}\n`;
+  if (risk.compPlanSearch?.results?.length) {
+    for (const r of risk.compPlanSearch.results) {
+      ctx += `  - [${r.title}](${r.url}): ${r.description}\n`;
+    }
+  }
+  ctx += `\n`;
+
+  // --- IMPACT FEES / HISTORIC / INCLUSIONARY ---
+  ctx += `## 32. IMPACT FEES, HISTORIC DISTRICTS & INCLUSIONARY HOUSING (Web Search)\n`;
+  if (risk.impactFeesSearch?.summary) ctx += `AI Summary: ${risk.impactFeesSearch.summary}\n`;
+  if (risk.impactFeesSearch?.results?.length) {
+    for (const r of risk.impactFeesSearch.results) {
+      ctx += `  - [${r.title}](${r.url}): ${r.description}\n`;
+    }
+  }
+  ctx += `\n`;
+
   // --- JURISDICTION ---
   ctx += `## LOCATION CONTEXT\n`;
   ctx += `- Jurisdiction: ${zoning.jurisdiction?.city}, ${zoning.jurisdiction?.state}\n`;
@@ -596,7 +668,7 @@ function buildContext(address, geo, prop, zoning, risk, census) {
   if (prop.geo?.censusTract) ctx += `- Census Tract: ${prop.geo.censusTract.name}\n`;
   ctx += `\n`;
 
-  ctx += `INSTRUCTIONS: Synthesize ALL the above real data into the JSON analysis. Use actual numbers from Census ACS, USGS, NREL, and web search results. Calculate cap rate, NOI, and GRM from real Census median rent and home values when property-specific data isn't available. For marketActivity: calculate priceToRentRatio as estimatedValue / (estimatedMonthlyRent * 12). Use insurance search data for insuranceEstimate and expenseBreakdown.insurance. Use rent growth search for rentGrowthYoY. Calculate DSCR as annualNOI / annualDebtService. For expenseBreakdown: estimate each line item from real data when possible. For developmentAnalysis: use lot size from property data, FAR from zoning, and construction cost search to calculate feasibility. yieldOnCost = stabilizedNOI / totalDevelopmentCost. developmentSpread = yieldOnCost - exitCapRate (both as decimals, e.g. 0.065 - 0.055 = 0.01 = positive). Mark estimates with [Estimated]. NEVER use "N/A" if you can calculate or estimate from available data.`;
+  ctx += `INSTRUCTIONS: Synthesize ALL the above real data into the JSON analysis. Use actual numbers from Census ACS, USGS, NREL, and web search results. Calculate cap rate, NOI, and GRM from real Census median rent and home values when property-specific data isn't available. For marketActivity: calculate priceToRentRatio as estimatedValue / (estimatedMonthlyRent * 12). Use insurance search data for insuranceEstimate and expenseBreakdown.insurance. Use rent growth search for rentGrowthYoY. Calculate DSCR as annualNOI / annualDebtService. For expenseBreakdown: estimate each line item from real data when possible. For developmentAnalysis: use lot size from property data, FAR from zoning, and construction cost search to calculate feasibility. yieldOnCost = stabilizedNOI / totalDevelopmentCost. developmentSpread = yieldOnCost - exitCapRate (both as decimals, e.g. 0.065 - 0.055 = 0.01 = positive). For landUseAnalysis: calculate farUtilization from estimated sqft, lot size, and max FAR from zoning. Use flood zone search for environmentalOverlay. Use comprehensive plan search for futureLandUse and zoningAlignment. Use impact fees search for regulatoryBurden and historicOverlay. Determine nonConformingStatus from current use vs zoning permitted uses. Mark estimates with [Estimated]. NEVER use "N/A" if you can calculate or estimate from available data.`;
 
   return ctx;
 }

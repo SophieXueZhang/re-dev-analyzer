@@ -28,6 +28,9 @@ async function fetchRiskData(address, geo) {
     webSearch(`"${city}" "${state}" homeowners insurance cost average premium rate 2025`, 8),
     webSearch(`"${city}" "${state}" rent growth year over year average rent increase 2025 2026`, 8),
     webSearch(`"${city}" "${state}" construction cost per square foot building cost residential commercial development impact fees 2025`, 8),
+    webSearch(`"${address}" FEMA flood zone map floodplain ${city} ${state} wetlands environmental overlay`, 8),
+    webSearch(`"${city}" "${state}" comprehensive plan future land use map zoning update rezone 2025 2026`, 8),
+    webSearch(`"${city}" "${state}" development impact fees permit fees exactions inclusionary housing historic district overlay`, 8),
   ]);
 
   return {
@@ -48,6 +51,9 @@ async function fetchRiskData(address, geo) {
     insuranceSearch: results[14].status === 'fulfilled' ? results[14].value : { results: [], summary: null },
     rentGrowthSearch: results[15].status === 'fulfilled' ? results[15].value : { results: [], summary: null },
     constructionCostSearch: results[16].status === 'fulfilled' ? results[16].value : { results: [], summary: null },
+    floodZoneSearch: results[17].status === 'fulfilled' ? results[17].value : { results: [], summary: null },
+    compPlanSearch: results[18].status === 'fulfilled' ? results[18].value : { results: [], summary: null },
+    impactFeesSearch: results[19].status === 'fulfilled' ? results[19].value : { results: [], summary: null },
     source: 'USGS, NOAA, NREL, EPA, Web Search',
   };
 }
