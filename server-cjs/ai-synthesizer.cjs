@@ -1,4 +1,5 @@
 // AI synthesis: combines all real data into structured analysis
+const { calculateOverallScore } = require('./scoring.cjs');
 const AI_URL = process.env.AI_BASE_URL || 'https://ai-gateway.happycapy.ai/api/v1/chat/completions';
 const AI_KEY = process.env.AI_GATEWAY_API_KEY;
 const AI_MODEL = process.env.AI_MODEL || 'x-ai/grok-3';
@@ -25,16 +26,20 @@ CRITICAL RULES:
 10. For comparables: only include real data found in search results. Include address, price, sqft if available.
 
 BUILDING RESTRICTIONS - MANDATORY:
-For buildingRestrictions, you MUST extract specific values from the PAGE CONTENT sections and search results. These pages contain actual zoning code text with real numbers.
-- maxHeight: Look for "maximum height", "height limit", "stories", "feet" in the page content. Provide as "XX feet / X stories (per source)".
-- maxFAR: Look for "floor area ratio", "FAR", "maximum FAR" in page content. Provide as "X.X (per source)".
-- maxLotCoverage: Look for "lot coverage", "building coverage", "impervious". Provide as "XX% (per source)".
-- frontSetback: Look for "front yard", "front setback". Provide as "XX feet (per source)".
-- sideSetback: Look for "side yard", "side setback". Provide as "XX feet (per source)".
-- rearSetback: Look for "rear yard", "rear setback". Provide as "XX feet (per source)".
-- minLotSize: Look for "minimum lot", "lot area", "minimum area". Provide as "X,XXX sq ft (per source)".
-- parkingRequirement: Look for "parking", "off-street parking", "spaces per unit". Provide as descriptive text with source.
-If page content does not contain a value, provide a reasonable estimate based on the zoning code type and city, marked as [Estimated based on {code} typical standards].
+For buildingRestrictions, follow this priority order:
+1. FIRST: Check section "11b. PRE-EXTRACTED BUILDING RESTRICTIONS" - these values were extracted by a dedicated deep research AI and are the most reliable. Use them directly.
+2. SECOND: Cross-reference with PAGE CONTENT sections (11, 11d) for additional detail or confirmation.
+3. THIRD: Use search result snippets for any remaining gaps.
+4. LAST RESORT: Provide a reasonable estimate based on the zoning code type and city, marked as [Estimated based on {code} typical standards].
+- maxHeight: Provide as "XX feet / X stories (per source)".
+- maxFAR: Provide as "X.X (per source)".
+- maxLotCoverage: Provide as "XX% (per source)".
+- frontSetback: Provide as "XX feet (per source)".
+- sideSetback: Provide as "XX feet (per source)".
+- rearSetback: Provide as "XX feet (per source)".
+- minLotSize: Provide as "X,XXX sq ft (per source)".
+- parkingRequirement: Provide as descriptive text with source.
+NEVER leave any buildingRestrictions field as "Unknown" or "N/A". Every field must have a specific value.
 
 Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
 {
@@ -95,8 +100,6 @@ Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
     "developmentPotential": "analysis"
   },
   "dataSources": ["list all real sources used"],
-  "overallScore": 1-100,
-  "investmentGrade": "A+/A/A-/B+/B/B-/C+/C/C-/D",
   "quickTake": "3-4 sentence executive summary with REAL data"
 }`;
 
@@ -129,7 +132,16 @@ Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
   const fenceMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fenceMatch) jsonStr = fenceMatch[1];
 
-  return JSON.parse(jsonStr.trim());
+  const aiResult = JSON.parse(jsonStr.trim());
+
+  // Deterministic scoring: override AI-generated score with weighted formula
+  const scoring = calculateOverallScore(aiResult.risks);
+  return {
+    ...aiResult,
+    overallScore: scoring.overallScore,
+    investmentGrade: scoring.investmentGrade,
+    scoreBreakdown: scoring.scoreBreakdown,
+  };
 }
 
 function buildContext(address, geo, prop, zoning, risk, census) {
@@ -269,6 +281,59 @@ function buildContext(address, geo, prop, zoning, risk, census) {
     for (const page of zoning.pageContents) {
       ctx += `### Source: ${page.url}\n`;
       ctx += `${page.content}\n\n`;
+    }
+  }
+
+  // --- DEEP RESEARCH: Building Restrictions (comprehensive-researcher approach) ---
+  if (zoning.deepResearch) {
+    const dr = zoning.deepResearch;
+
+    // Pre-extracted building restriction values (HIGH PRIORITY - use these first)
+    if (dr.extractedRestrictions) {
+      ctx += `## 11b. PRE-EXTRACTED BUILDING RESTRICTIONS (Deep Research AI Analysis - USE THESE VALUES)\n`;
+      ctx += `These values were extracted by a dedicated AI analysis of multiple zoning sources. USE THESE as your PRIMARY source for buildingRestrictions:\n`;
+      const er = dr.extractedRestrictions;
+      if (er.maxHeight) ctx += `- maxHeight: ${er.maxHeight}\n`;
+      if (er.maxFAR) ctx += `- maxFAR: ${er.maxFAR}\n`;
+      if (er.maxLotCoverage) ctx += `- maxLotCoverage: ${er.maxLotCoverage}\n`;
+      if (er.frontSetback) ctx += `- frontSetback: ${er.frontSetback}\n`;
+      if (er.sideSetback) ctx += `- sideSetback: ${er.sideSetback}\n`;
+      if (er.rearSetback) ctx += `- rearSetback: ${er.rearSetback}\n`;
+      if (er.minLotSize) ctx += `- minLotSize: ${er.minLotSize}\n`;
+      if (er.parkingRequirement) ctx += `- parkingRequirement: ${er.parkingRequirement}\n`;
+      if (er.maxDensity) ctx += `- maxDensity: ${er.maxDensity}\n`;
+      if (Array.isArray(er.permittedUses) && er.permittedUses.length > 0) {
+        ctx += `- permittedUses: ${er.permittedUses.join(', ')}\n`;
+      }
+      if (Array.isArray(er.conditionalUses) && er.conditionalUses.length > 0) {
+        ctx += `- conditionalUses: ${er.conditionalUses.join(', ')}\n`;
+      }
+      if (Array.isArray(er.prohibitedUses) && er.prohibitedUses.length > 0) {
+        ctx += `- prohibitedUses: ${er.prohibitedUses.join(', ')}\n`;
+      }
+      ctx += `\n`;
+    }
+
+    // Deep research search results by field
+    if (dr.searchGroups?.length > 0) {
+      ctx += `## 11c. DEEP RESEARCH - FIELD-SPECIFIC SEARCH RESULTS\n`;
+      for (const group of dr.searchGroups) {
+        ctx += `### ${group.label}:\n`;
+        if (group.summary) ctx += `Summary: ${group.summary}\n`;
+        for (const r of (group.results || []).slice(0, 3)) {
+          ctx += `  - ${r.title}: ${r.description}\n`;
+        }
+      }
+      ctx += `\n`;
+    }
+
+    // Deep research page contents
+    if (dr.pageContents?.length > 0) {
+      ctx += `## 11d. DEEP RESEARCH - ADDITIONAL PAGE CONTENT (contains specific restriction numbers)\n`;
+      for (const page of dr.pageContents) {
+        ctx += `### Source: ${page.url}\n`;
+        ctx += `${page.content}\n\n`;
+      }
     }
   }
 

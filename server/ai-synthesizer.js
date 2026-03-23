@@ -1,4 +1,5 @@
 // AI API - supports OpenRouter, HappyCapy Gateway, or any OpenAI-compatible endpoint
+import { calculateOverallScore } from './scoring.js';
 const AI_URL = process.env.AI_BASE_URL || 'https://openrouter.ai/api/v1/chat/completions';
 const AI_KEY = process.env.AI_GATEWAY_API_KEY;
 const AI_MODEL = process.env.AI_MODEL || 'x-ai/grok-3';
@@ -104,8 +105,6 @@ Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
     "developmentPotential": "analysis based on real zoning data"
   },
   "dataSources": ["list of real sources used"],
-  "overallScore": 1-100,
-  "investmentGrade": "A+/A/A-/B+/B/B-/C+/C/C-/D",
   "quickTake": "3-4 sentence executive summary referencing REAL data points"
 }`;
 
@@ -138,7 +137,16 @@ Respond ONLY with valid JSON (no markdown, no code fences). Use this structure:
   const fenceMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fenceMatch) jsonStr = fenceMatch[1];
 
-  return JSON.parse(jsonStr.trim());
+  const aiResult = JSON.parse(jsonStr.trim());
+
+  // Deterministic scoring: override AI-generated score with weighted formula
+  const scoring = calculateOverallScore(aiResult.risks);
+  return {
+    ...aiResult,
+    overallScore: scoring.overallScore,
+    investmentGrade: scoring.investmentGrade,
+    scoreBreakdown: scoring.scoreBreakdown,
+  };
 }
 
 function buildContext(address, geoData, propertyData, zoningData, riskData) {
