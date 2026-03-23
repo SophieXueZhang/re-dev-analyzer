@@ -5,4 +5,4 @@ nixPkgs = ["nodejs_23", "npm-10_x"]
 cmds = ["npm install", "npm run build"]
 
 [start]
-cmd = "node server/index.js"
+cmd = "node server-cjs/index.cjs"
